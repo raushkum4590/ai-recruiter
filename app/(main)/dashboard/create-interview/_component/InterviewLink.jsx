@@ -29,25 +29,21 @@ function InterviewLink({ interview_id, formData }) {
                 
                 setDeploymentType(isVercel ? 'Vercel' : (isProduction ? 'Production' : 'Local'));
                 
-                // Get origin - this should work for both localhost and Vercel
-                const origin = window.location.origin;
-                
-                // Construct the URL ensuring no double slashes
-                let interviewUrl = `${origin}/interview/${interview_id}`;
-                
-                // Normalize URL to remove any potential issues
-                try {
-                    const normalizedUrl = new URL(interviewUrl);
-                    interviewUrl = normalizedUrl.toString();
-                } catch (e) {
-                    console.error('URL normalization error:', e);
+                // Generate the interview URL - hardcode for Vercel to ensure it works
+                let interviewUrl;
+                if (isVercel) {
+                    // Use the hardcoded Vercel domain to ensure consistency
+                    interviewUrl = `https://ai-recruiter-nu.vercel.app/interview/${interview_id}`;
+                } else {
+                    // For local or other deployments, use the window.location.origin
+                    const origin = window.location.origin;
+                    interviewUrl = `${origin}/interview/${interview_id}`;
                 }
                 
                 setUrl(interviewUrl);
                 
                 // Log the URL for debugging
                 console.log('Environment:', isVercel ? 'Vercel' : (isProduction ? 'Production' : 'Local'));
-                console.log('Origin:', origin);
                 console.log('Generated interview URL:', interviewUrl);
             } catch (error) {
                 console.error('Error generating URL:', error);

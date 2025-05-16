@@ -5,14 +5,7 @@ const nextConfig = {
     },
     // Ensure correct link handling in production
     trailingSlash: false,
-    async rewrites() {
-        return [
-            {
-                source: '/interview/:path*',
-                destination: '/interview/:path*',
-            },
-        ];
-    }
+    // No rewrite or basePath needed as that might be causing issues
 };
 
 export default nextConfig;

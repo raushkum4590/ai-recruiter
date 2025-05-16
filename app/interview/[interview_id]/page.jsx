@@ -18,10 +18,16 @@ function Interview() {
   const [userEmail, setUserEmail] = useState('');
   const {interviewInfo, setInterviewInfo} = useContext(InterviewDataContext);
   const [error, setError] = useState('');
+  const [currentUrl, setCurrentUrl] = useState('');
   
   const router = useRouter();
   
   useEffect(() => {
+    // Save current URL for debugging
+    if (typeof window !== 'undefined') {
+      setCurrentUrl(window.location.href);
+    }
+    
     // Validate interview_id format and presence
     if (!interview_id) {
       console.error('Interview ID is missing or invalid');
@@ -29,7 +35,6 @@ function Interview() {
       return;
     }
     
-    console.log('Current URL:', typeof window !== 'undefined' ? window.location.href : 'Server-side rendering');
     GetInterviewDetail();
   }, [interview_id]);
   
@@ -132,6 +137,15 @@ function Interview() {
             <h2 className='font-bold text-red-500 text-xl mb-3'>Error</h2>
             <p className="text-gray-700">{error}</p>
             <p className="mt-4 text-gray-500">The interview link appears to be invalid. Please contact the interviewer for a valid link.</p>
+            
+            {/* Debug information - only shown in development */}
+            {process.env.NODE_ENV !== 'production' && (
+              <div className="mt-6 p-4 bg-gray-100 rounded-md text-left">
+                <p className="text-sm font-medium">Debug Information:</p>
+                <p className="text-xs mt-2">Interview ID: {interview_id || 'Not found'}</p>
+                <p className="text-xs mt-1">Current URL: {currentUrl}</p>
+              </div>
+            )}
           </div>
           <Button 
             onClick={() => router.push('/')} 
