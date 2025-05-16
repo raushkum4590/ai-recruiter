@@ -25,6 +25,20 @@ function Startinterview() {
   // Ref to store conversation data safely between renders
   const conversationRef = useRef([]);
   
+  // Debug route information
+  useEffect(() => {
+    console.log("Start Interview Page Loaded");
+    console.log("Current Interview ID:", interview_id);
+    console.log("Current URL:", typeof window !== 'undefined' ? window.location.href : 'Server-side rendering');
+    console.log("Interview Info in Context:", interviewInfo);
+    
+    // Validate that we have the necessary data to proceed
+    if (!interviewInfo || !interviewInfo.interviewData) {
+      console.error("Missing interview data in context");
+      setError("Missing interview data. Please go back and try again.");
+    }
+  }, [interview_id, interviewInfo]);
+  
   // Initialize Vapi once when component mounts
   useEffect(() => {
     console.log("Initializing Vapi component");

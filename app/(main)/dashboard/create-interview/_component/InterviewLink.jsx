@@ -9,6 +9,7 @@ import { toast } from 'sonner';
 function InterviewLink({ interview_id, formData }) {
     const [url, setUrl] = useState('');
     const [isUrlValid, setIsUrlValid] = useState(true);
+    const [deploymentType, setDeploymentType] = useState('');
     
     useEffect(() => {
         // Get the current window location when component mounts (client-side only)
@@ -21,12 +22,32 @@ function InterviewLink({ interview_id, formData }) {
                     return;
                 }
                 
-                const baseUrl = window.location.origin;
-                // Make sure we have the correct URL structure for your app
-                const interviewUrl = `${baseUrl}/interview/${interview_id}`;
+                // Determine deployment environment
+                const hostname = window.location.hostname;
+                const isVercel = hostname.includes('vercel.app');
+                const isProduction = isVercel || !hostname.includes('localhost');
+                
+                setDeploymentType(isVercel ? 'Vercel' : (isProduction ? 'Production' : 'Local'));
+                
+                // Get origin - this should work for both localhost and Vercel
+                const origin = window.location.origin;
+                
+                // Construct the URL ensuring no double slashes
+                let interviewUrl = `${origin}/interview/${interview_id}`;
+                
+                // Normalize URL to remove any potential issues
+                try {
+                    const normalizedUrl = new URL(interviewUrl);
+                    interviewUrl = normalizedUrl.toString();
+                } catch (e) {
+                    console.error('URL normalization error:', e);
+                }
+                
                 setUrl(interviewUrl);
                 
                 // Log the URL for debugging
+                console.log('Environment:', isVercel ? 'Vercel' : (isProduction ? 'Production' : 'Local'));
+                console.log('Origin:', origin);
                 console.log('Generated interview URL:', interviewUrl);
             } catch (error) {
                 console.error('Error generating URL:', error);
@@ -54,8 +75,7 @@ function InterviewLink({ interview_id, formData }) {
                 <div className='flex justify-between items-center'>
                     <h2 className='font-bold'>Interview Link</h2>
                     <h2 className='p-1 px-2 text-blue-400 bg-blue-50 rounded-lg'>valid for 30 Days</h2>
-                </div>
-                <div className='mt-3 flex gap-3 items-center'>
+                </div>                <div className='mt-3 flex gap-3 items-center'>
                     <Input value={url} disabled={true}/>
                     <Button onClick={onCopyLink} className='text-blue-500 bg-blue-200 hover:bg-blue-300'><Copy/> Copy Link</Button>
                 </div>
@@ -63,7 +83,32 @@ function InterviewLink({ interview_id, formData }) {
                     <div className="mt-2 text-red-500 text-sm">
                         There might be an issue with this URL. Please verify it works correctly.
                     </div>
+                )}                {deploymentType && (
+                    <div className="mt-2 text-sm text-gray-500">
+                        Environment detected: <span className="font-medium">{deploymentType}</span>
+                    </div>
                 )}
+                
+                {deploymentType === 'Vercel' && (
+                    <div className="mt-2 text-blue-600 text-sm">
+                        <p>Alternative direct link (if the regular link doesn't work):</p>
+                        <div className="flex gap-3 items-center mt-1">
+                            <Input 
+                                value={`https://ai-recruiter-nu.vercel.app/interview/${interview_id}`} 
+                                disabled={true}
+                            />
+                            <Button 
+                                onClick={() => {
+                                    navigator.clipboard.writeText(`https://ai-recruiter-nu.vercel.app/interview/${interview_id}`);
+                                    toast.success('Direct link copied to clipboard');
+                                }} 
+                                className='text-blue-500 bg-blue-200 hover:bg-blue-300'>
+                                <Copy/> Copy
+                            </Button>
+                        </div>
+                    </div>
+                )}
+                
                 <hr className='my-5'/>
                 <div className='flex gap-5'>
                     <h2 className='text-gray-500 text-sm flex gap-2 items-center'><Clock className='h-4 w-4'/> {formData?.duration || 30} min</h2>
