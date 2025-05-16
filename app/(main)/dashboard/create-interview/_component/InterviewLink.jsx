@@ -8,12 +8,30 @@ import { toast } from 'sonner';
 
 function InterviewLink({ interview_id, formData }) {
     const [url, setUrl] = useState('');
+    const [isUrlValid, setIsUrlValid] = useState(true);
     
     useEffect(() => {
         // Get the current window location when component mounts (client-side only)
         if (typeof window !== 'undefined') {
-            const baseUrl = window.location.origin;
-            setUrl(`${baseUrl}/interview/${interview_id}`);
+            try {
+                // Make sure interview_id exists and is not undefined
+                if (!interview_id) {
+                    console.error('Interview ID is missing');
+                    setIsUrlValid(false);
+                    return;
+                }
+                
+                const baseUrl = window.location.origin;
+                // Make sure we have the correct URL structure for your app
+                const interviewUrl = `${baseUrl}/interview/${interview_id}`;
+                setUrl(interviewUrl);
+                
+                // Log the URL for debugging
+                console.log('Generated interview URL:', interviewUrl);
+            } catch (error) {
+                console.error('Error generating URL:', error);
+                setIsUrlValid(false);
+            }
         }
     }, [interview_id]);
     
@@ -35,16 +53,21 @@ function InterviewLink({ interview_id, formData }) {
             <div className='w-full p-7 mt-6 rounded-xl bg-white shadow-md'>
                 <div className='flex justify-between items-center'>
                     <h2 className='font-bold'>Interview Link</h2>
-                    <h2 className='p-1 px-2 text-blue-400 bg-blue-50 rounded-4xl'>valid for 30 Days</h2>
+                    <h2 className='p-1 px-2 text-blue-400 bg-blue-50 rounded-lg'>valid for 30 Days</h2>
                 </div>
                 <div className='mt-3 flex gap-3 items-center'>
                     <Input value={url} disabled={true}/>
                     <Button onClick={onCopyLink} className='text-blue-500 bg-blue-200 hover:bg-blue-300'><Copy/> Copy Link</Button>
                 </div>
+                {!isUrlValid && (
+                    <div className="mt-2 text-red-500 text-sm">
+                        There might be an issue with this URL. Please verify it works correctly.
+                    </div>
+                )}
                 <hr className='my-5'/>
                 <div className='flex gap-5'>
-                    <h2 className='text-gray-500 text-sm flex gap-2 items-center'><Clock className='h-4 w-4'/> {formData.duration || 30} min</h2>
-                    <h2 className='text-gray-500 text-sm flex gap-2 items-center'><List className='h-4 w-4'/> {formData.questionList?.length || 10}</h2>
+                    <h2 className='text-gray-500 text-sm flex gap-2 items-center'><Clock className='h-4 w-4'/> {formData?.duration || 30} min</h2>
+                    <h2 className='text-gray-500 text-sm flex gap-2 items-center'><List className='h-4 w-4'/> {formData?.questionList?.length || 10}</h2>
                 </div>
             </div>
             <div className='mt-7 bg-white p-5 rounded-lg shadow-md w-full'>
