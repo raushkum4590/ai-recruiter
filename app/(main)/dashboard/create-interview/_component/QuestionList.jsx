@@ -5,6 +5,7 @@ import { supabase } from '@/services/superbaseClient';
 import { useUser } from '@/app/provider';
 import { v4 as uuidv4 } from 'uuid';
 import { Button } from '@/components/ui/button';
+import { toast } from 'sonner';
 
 function QuestionList({ formData, onCreateLink }) {
   const [loading, setLoading] = useState(true);
@@ -47,23 +48,43 @@ function QuestionList({ formData, onCreateLink }) {
   };
   const onFinish = async () => {
     setSaveLoading(true);
-    const interview_id=uuidv4(); 
-
-    const { data, error } = await supabase
-      .from('Interviews')
-      .insert([
-        { 
-          ...formData,
-          questionList: questionList,
-          userEmail: user?.email,
-          interview_id: interview_id
-        },
-      ])
-      .select();
-      //update User Credits
+    try {
+      // Generate a UUID for the interview
+      const interview_id = uuidv4();
+      console.log('Generated interview_id:', interview_id);
       
-      setSaveLoading(false);
+      if (!interview_id || interview_id.length < 10) {
+        throw new Error('Invalid interview ID generated');
+      }
+
+      // Insert into database
+      const { data, error } = await supabase
+        .from('Interviews')
+        .insert([
+          { 
+            ...formData,
+            questionList: questionList,
+            userEmail: user?.email,
+            interview_id: interview_id
+          },
+        ])
+        .select();
+        
+      if (error) {
+        console.error('Database error:', error);
+        throw new Error('Failed to save interview');
+      }
+      
+      console.log('Interview saved successfully:', data);
+      
+      // Call the parent component with the interview ID
       onCreateLink(interview_id);
+    } catch (error) {
+      console.error('Error in onFinish:', error);
+      toast.error('Failed to create interview link');
+    } finally {
+      setSaveLoading(false);
+    }
   };
   
 

@@ -11,7 +11,15 @@ function InterviewLink({ interview_id, formData }) {
     const [isUrlValid, setIsUrlValid] = useState(true);
     const [deploymentType, setDeploymentType] = useState('');
     
+    // Function to generate a valid production URL
+    const getProductionUrl = (id) => {
+        // ALWAYS use the hardcoded production URL
+        return `https://ai-recruiter-nu.vercel.app/interview/${id}`;
+    };
+    
     useEffect(() => {
+        console.log('InterviewLink component received interview_id:', interview_id);
+        
         // Get the current window location when component mounts (client-side only)
         if (typeof window !== 'undefined') {
             try {
@@ -21,14 +29,10 @@ function InterviewLink({ interview_id, formData }) {
                     setIsUrlValid(false);
                     return;
                 }
-                  // FORCE using the hardcoded Vercel URL
-                // This ensures proper link generation regardless of environment detection issues
-                const interviewUrl = `https://ai-recruiter-nu.vercel.app/interview/${interview_id}`;
                 
-                // For display purposes only, detect environment
-                const hostname = window.location.hostname;
-                const isVercel = hostname.includes('vercel.app');
-                const isProduction = isVercel || !hostname.includes('localhost');
+                // ALWAYS use the production URL - NO EXCEPTIONS
+                const interviewUrl = getProductionUrl(interview_id);
+                setUrl(interviewUrl);
                 
                 setDeploymentType(isVercel ? 'Vercel' : (isProduction ? 'Production' : 'Local'));
                 
@@ -42,11 +46,10 @@ function InterviewLink({ interview_id, formData }) {
                 setIsUrlValid(false);
             }
         }
-    }, [interview_id]);
-      const onCopyLink = async () => {
+    }, [interview_id]);    const onCopyLink = async () => {
         try {
-            // Always copy the production URL to ensure it works
-            const productionUrl = `https://ai-recruiter-nu.vercel.app/interview/${interview_id}`;
+            // Always copy the production URL
+            const productionUrl = getProductionUrl(interview_id);
             await navigator.clipboard.writeText(productionUrl);
             toast.success('Link copied to clipboard');
         } catch (error) {
@@ -64,8 +67,10 @@ function InterviewLink({ interview_id, formData }) {
                 <div className='flex justify-between items-center'>
                     <h2 className='font-bold'>Interview Link</h2>
                     <h2 className='p-1 px-2 text-blue-400 bg-blue-50 rounded-lg'>valid for 30 Days</h2>
-                </div>                <div className='mt-3 flex gap-3 items-center'>
-                    <Input value={url} disabled={true}/>
+                </div>
+                
+                <div className='mt-3 flex gap-3 items-center'>
+                    <Input value={getProductionUrl(interview_id)} disabled={true}/>
                     <Button onClick={onCopyLink} className='text-blue-500 bg-blue-200 hover:bg-blue-300'><Copy/> Copy Link</Button>
                 </div>                {!isUrlValid && (
                     <div className="mt-2 text-red-500 text-sm">
@@ -73,28 +78,8 @@ function InterviewLink({ interview_id, formData }) {
                     </div>
                 )}
                 
-                {deploymentType && (
-                    <div className="mt-2 text-sm text-gray-500">
-                        Environment detected: <span className="font-medium">{deploymentType}</span>
-                    </div>
-                )}
-                
-                <div className="mt-2 text-blue-600 text-sm">
-                    <p>⚠️ Important: Use this link for all environments:</p>
-                    <div className="flex gap-3 items-center mt-1">
-                        <Input 
-                            value={`https://ai-recruiter-nu.vercel.app/interview/${interview_id}`} 
-                            disabled={true}
-                        />
-                        <Button 
-                            onClick={() => {
-                                navigator.clipboard.writeText(`https://ai-recruiter-nu.vercel.app/interview/${interview_id}`);
-                                toast.success('Direct link copied to clipboard');
-                            }} 
-                            className='text-blue-500 bg-blue-200 hover:bg-blue-300'>
-                            <Copy/> Copy
-                        </Button>
-                    </div>
+                <div className="mt-2 text-gray-600 text-sm">
+                    <p>ℹ️ This is the official link to share with candidates:</p>
                 </div>
                 
                 <hr className='my-5'/>
