@@ -1,23 +1,24 @@
 import { NextResponse } from 'next/server';
 
-// This middleware will help debug and fix routing issues on Vercel
+// This middleware handles routing for the application
 export function middleware(request) {
   // Get the pathname from the URL
   const pathname = request.nextUrl.pathname;
   
-  // Check if this is an interview route
+  // Special handling for interview routes
   if (pathname.startsWith('/interview/')) {
-    // For interview routes, preserve the URL structure
+    // Ensure the URL is preserved exactly as-is for interview routes
     return NextResponse.next();
   }
   
+  // Default handling for all other routes
   return NextResponse.next();
 }
 
 // Configure which paths should trigger this middleware
 export const config = {
   matcher: [
-    // Match all interview routes
-    '/interview/:path*',
+    // Match all routes for consistent handling
+    '/(.*)',
   ],
 };

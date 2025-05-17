@@ -21,24 +21,16 @@ function InterviewLink({ interview_id, formData }) {
                     setIsUrlValid(false);
                     return;
                 }
+                  // FORCE using the hardcoded Vercel URL
+                // This ensures proper link generation regardless of environment detection issues
+                const interviewUrl = `https://ai-recruiter-nu.vercel.app/interview/${interview_id}`;
                 
-                // Determine deployment environment
+                // For display purposes only, detect environment
                 const hostname = window.location.hostname;
                 const isVercel = hostname.includes('vercel.app');
                 const isProduction = isVercel || !hostname.includes('localhost');
                 
                 setDeploymentType(isVercel ? 'Vercel' : (isProduction ? 'Production' : 'Local'));
-                
-                // Generate the interview URL - hardcode for Vercel to ensure it works
-                let interviewUrl;
-                if (isVercel) {
-                    // Use the hardcoded Vercel domain to ensure consistency
-                    interviewUrl = `https://ai-recruiter-nu.vercel.app/interview/${interview_id}`;
-                } else {
-                    // For local or other deployments, use the window.location.origin
-                    const origin = window.location.origin;
-                    interviewUrl = `${origin}/interview/${interview_id}`;
-                }
                 
                 setUrl(interviewUrl);
                 
@@ -51,10 +43,11 @@ function InterviewLink({ interview_id, formData }) {
             }
         }
     }, [interview_id]);
-    
-    const onCopyLink = async () => {
+      const onCopyLink = async () => {
         try {
-            await navigator.clipboard.writeText(url);
+            // Always copy the production URL to ensure it works
+            const productionUrl = `https://ai-recruiter-nu.vercel.app/interview/${interview_id}`;
+            await navigator.clipboard.writeText(productionUrl);
             toast.success('Link copied to clipboard');
         } catch (error) {
             console.error('Failed to copy link', error);
@@ -74,36 +67,35 @@ function InterviewLink({ interview_id, formData }) {
                 </div>                <div className='mt-3 flex gap-3 items-center'>
                     <Input value={url} disabled={true}/>
                     <Button onClick={onCopyLink} className='text-blue-500 bg-blue-200 hover:bg-blue-300'><Copy/> Copy Link</Button>
-                </div>
-                {!isUrlValid && (
+                </div>                {!isUrlValid && (
                     <div className="mt-2 text-red-500 text-sm">
                         There might be an issue with this URL. Please verify it works correctly.
                     </div>
-                )}                {deploymentType && (
+                )}
+                
+                {deploymentType && (
                     <div className="mt-2 text-sm text-gray-500">
                         Environment detected: <span className="font-medium">{deploymentType}</span>
                     </div>
                 )}
                 
-                {deploymentType === 'Vercel' && (
-                    <div className="mt-2 text-blue-600 text-sm">
-                        <p>Alternative direct link (if the regular link doesn't work):</p>
-                        <div className="flex gap-3 items-center mt-1">
-                            <Input 
-                                value={`https://ai-recruiter-nu.vercel.app/interview/${interview_id}`} 
-                                disabled={true}
-                            />
-                            <Button 
-                                onClick={() => {
-                                    navigator.clipboard.writeText(`https://ai-recruiter-nu.vercel.app/interview/${interview_id}`);
-                                    toast.success('Direct link copied to clipboard');
-                                }} 
-                                className='text-blue-500 bg-blue-200 hover:bg-blue-300'>
-                                <Copy/> Copy
-                            </Button>
-                        </div>
+                <div className="mt-2 text-blue-600 text-sm">
+                    <p>⚠️ Important: Use this link for all environments:</p>
+                    <div className="flex gap-3 items-center mt-1">
+                        <Input 
+                            value={`https://ai-recruiter-nu.vercel.app/interview/${interview_id}`} 
+                            disabled={true}
+                        />
+                        <Button 
+                            onClick={() => {
+                                navigator.clipboard.writeText(`https://ai-recruiter-nu.vercel.app/interview/${interview_id}`);
+                                toast.success('Direct link copied to clipboard');
+                            }} 
+                            className='text-blue-500 bg-blue-200 hover:bg-blue-300'>
+                            <Copy/> Copy
+                        </Button>
                     </div>
-                )}
+                </div>
                 
                 <hr className='my-5'/>
                 <div className='flex gap-5'>
