@@ -2,6 +2,8 @@ import { FEEDBACK_PROMPT } from "@/services/constants";
 import { NextResponse } from "next/server";
 import OpenAI from "openai";
 
+// Uses Qwen model (not Gemini) - 2026-04-06
+
 export async function POST(req) {
   try {
     const { conversation } = await req.json();
