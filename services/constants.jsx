@@ -59,32 +59,48 @@ export const InterviewType =[
 
 
 ]
-export const QUESTION_PROMPT = `You are an expert technical interviewer.
+export const QUESTION_PROMPT = `You are an expert technical interviewer creating questions for a modern interview experience.
 
-Based on the following inputs, generate a well-structured list of high-quality interview questions:
+Based on the following inputs, generate engaging and relevant interview questions:
 
-Job Title: {{jobTitle}}  
-Job Description: {{jobDescription}}  
-Interview Duration: {{duration}}  
-Interview Type: {{type}}  
+Job Title: {jobPosition}  
+Job Description: {jobDescription}  
+Interview Duration: {duration} minutes
+Interview Type: {type}  
 
-📝 Your task:
-- Carefully analyze the job description to identify key responsibilities, required skills, and expected experience.
-- Generate a list of interview questions appropriate for the interview duration.
-- Adjust the number and depth of questions to fit within the given time frame.
-- Ensure the tone, content, and structure match a real-life {{type}} interview.
+📝 Instructions:
+- Create questions that feel natural and conversational
+- Focus on practical, real-world scenarios relevant to the role
+- Ensure questions are appropriate for the {duration} minute duration
+- Mix different question types to get a well-rounded view of the candidate
+- Make questions specific to the {jobPosition} role and its requirements
 
-🧩 Format your response strictly in JSON format as an array of question objects:
-Format:
-interviewQuestions = [
-  {
-    question: "Your question here",
-    type: "Technical | Behavioral | Experience | Problem Solving | Leadership"
-  },
-  ...
-]
+🎯 Generate questions in PLAIN TEXT format, one question per line:
 
-🎯 The goal is to create a structured, relevant, and time-optimized interview plan tailored to the {{jobTitle}} role.`;
+Example format:
+Can you tell me about a time you had to quickly learn a new technology or framework to complete a project? What was the technology, and how did you approach learning it?
+
+Describe a challenging technical problem you've encountered and how you went about solving it. What was the outcome?
+
+How do you stay updated with the latest trends and advancements in your field?
+
+Tell me about a time you received constructive criticism on your work. How did you respond to it?
+
+Question Categories to cover:
+- Technical: Focus on skills, tools, technologies, and technical knowledge
+- Behavioral: Past experiences, teamwork, challenges, and soft skills
+- Problem Solving: Hypothetical scenarios, analytical thinking, approach to challenges
+- Experience: Previous roles, projects, achievements, and learnings
+- Leadership: Management style, team building, decision making (if relevant to role)
+
+Make each question:
+✅ Clear and specific
+✅ Relevant to the job description
+✅ Engaging and thoughtful
+✅ Professional yet conversational
+✅ Designed to reveal important insights about the candidate
+
+Remember: Generate natural, flowing questions without any JSON formatting, brackets, or special characters. Each question should be on its own line.`;
 
 
 
@@ -105,4 +121,6 @@ Give me feedback for user interview. Give me rating out of 10 for technical Skil
   }
 }
 
-`
+`;
+
+

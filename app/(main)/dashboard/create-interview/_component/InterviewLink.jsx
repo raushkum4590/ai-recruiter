@@ -1,3 +1,5 @@
+'use client';
+
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { ArrowLeft, Clock, Copy, List, Mail, PlusIcon } from 'lucide-react';
@@ -59,49 +61,117 @@ function InterviewLink({ interview_id, formData }) {
     };
 
     return (
-        <div className='flex flex-col items-center w-full justify-center mt-10'>
-            <Image src={'/check.png'} alt='check' width={200} height={200} className='w-[50px] h-[50px]'/>
-            <h2 className='font-bold text-lg mt-4'>Your AI Interview is Ready!</h2>
-            <p className='mt-3'>Share This Link with Candidates to start interview process</p>
-            <div className='w-full p-7 mt-6 rounded-xl bg-white shadow-md'>
-                <div className='flex justify-between items-center'>
-                    <h2 className='font-bold'>Interview Link</h2>
-                    <h2 className='p-1 px-2 text-blue-400 bg-blue-50 rounded-lg'>valid for 30 Days</h2>
+        <div className='flex flex-col items-center w-full justify-center mt-10 max-w-4xl mx-auto'>
+            {/* Success Header */}
+            <div className="text-center mb-8">
+                <div className="mx-auto w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mb-4">
+                    <Image src={'/check.png'} alt='check' width={40} height={40} className='w-10 h-10'/>
                 </div>
-                
-                <div className='mt-3 flex gap-3 items-center'>
-                    <Input value={getProductionUrl(interview_id)} disabled={true}/>
-                    <Button onClick={onCopyLink} className='text-blue-500 bg-blue-200 hover:bg-blue-300'><Copy/> Copy Link</Button>
-                </div>                {!isUrlValid && (
-                    <div className="mt-2 text-red-500 text-sm">
-                        There might be an issue with this URL. Please verify it works correctly.
+                <h2 className='text-3xl font-bold text-gray-900 mb-2'>Your AI Interview is Ready!</h2>
+                <p className='text-lg text-gray-600'>Share this link with candidates to start the interview process</p>
+            </div>
+
+            {/* Main Interview Link Card */}
+            <div className='w-full bg-white rounded-2xl shadow-lg border border-gray-200 overflow-hidden mb-8'>
+                {/* Header */}
+                <div className="bg-gradient-to-r from-blue-600 to-indigo-700 p-6 text-white">
+                    <div className='flex justify-between items-center'>
+                        <h3 className='text-xl font-bold'>Interview Link</h3>
+                        <span className='px-3 py-1 bg-white bg-opacity-20 text-white text-sm rounded-full border border-white border-opacity-30'>
+                            Valid for 30 Days
+                        </span>
                     </div>
-                )}
-                
-                <div className="mt-2 text-gray-600 text-sm">
-                    <p>ℹ️ This is the official link to share with candidates:</p>
                 </div>
-                
-                <hr className='my-5'/>
-                <div className='flex gap-5'>
-                    <h2 className='text-gray-500 text-sm flex gap-2 items-center'><Clock className='h-4 w-4'/> {formData?.duration || 30} min</h2>
-                    <h2 className='text-gray-500 text-sm flex gap-2 items-center'><List className='h-4 w-4'/> {formData?.questionList?.length || 10}</h2>
+
+                {/* Link Section */}
+                <div className="p-6">
+                    <div className='flex gap-3 items-center mb-4'>
+                        <Input 
+                            value={getProductionUrl(interview_id)} 
+                            disabled={true}
+                            className="bg-gray-50 border-gray-200 text-gray-700 font-mono text-sm"
+                        />
+                        <Button 
+                            onClick={onCopyLink} 
+                            className='bg-blue-600 hover:bg-blue-700 text-white px-6 whitespace-nowrap'>
+                            <Copy className="h-4 w-4 mr-2" /> 
+                            Copy Link
+                        </Button>
+                    </div>
+
+                    {!isUrlValid && (
+                        <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg">
+                            <p className="text-red-600 text-sm">⚠️ There might be an issue with this URL. Please verify it works correctly.</p>
+                        </div>
+                    )}
+                    
+                    <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
+                        <p className="text-blue-800 text-sm font-medium mb-2">📋 Share this official interview link:</p>
+                        <p className="text-blue-700 text-sm">Send this link directly to candidates via email, messaging platforms, or your preferred communication method.</p>
+                    </div>
+
+                    {/* Interview Details */}
+                    <div className='grid grid-cols-2 gap-4'>
+                        <div className="flex items-center space-x-3 p-3 bg-gray-50 rounded-lg">
+                            <div className="p-2 bg-blue-100 rounded-lg">
+                                <Clock className='h-4 w-4 text-blue-600' />
+                            </div>
+                            <div>
+                                <p className="text-sm text-gray-600">Duration</p>
+                                <p className="font-semibold text-gray-900">{formData?.duration || 30} min</p>
+                            </div>
+                        </div>
+                        <div className="flex items-center space-x-3 p-3 bg-gray-50 rounded-lg">
+                            <div className="p-2 bg-green-100 rounded-lg">
+                                <List className='h-4 w-4 text-green-600' />
+                            </div>
+                            <div>
+                                <p className="text-sm text-gray-600">Questions</p>
+                                <p className="font-semibold text-gray-900">{formData?.questionList?.length || 10}</p>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
-            <div className='mt-7 bg-white p-5 rounded-lg shadow-md w-full'>
-                <h2 className='font-bold'>Share Via</h2>
-                <div className='gap-5 flex mt-3'>
-                    <Button variant={'outline'} className='ml-2'><Mail/>Email</Button>
-                    <Button variant={'outline'} className='ml-2'><Mail/>Slack</Button>
-                    <Button variant={'outline'} className='ml-2'><Mail/>LinkedIn</Button>
+
+            {/* Share Options */}
+            <div className='w-full bg-white rounded-2xl shadow-lg border border-gray-200 p-6 mb-8'>
+                <h3 className='text-lg font-bold text-gray-900 mb-4'>Share Via</h3>
+                <div className='grid grid-cols-1 sm:grid-cols-3 gap-4'>
+                    <Button 
+                        variant={'outline'} 
+                        className='flex items-center justify-center space-x-2 p-4 h-auto hover:bg-blue-50 hover:border-blue-200'>
+                        <Mail className="h-5 w-5 text-blue-600" />
+                        <span>Email</span>
+                    </Button>
+                    <Button 
+                        variant={'outline'} 
+                        className='flex items-center justify-center space-x-2 p-4 h-auto hover:bg-green-50 hover:border-green-200'>
+                        <Mail className="h-5 w-5 text-green-600" />
+                        <span>Slack</span>
+                    </Button>
+                    <Button 
+                        variant={'outline'} 
+                        className='flex items-center justify-center space-x-2 p-4 h-auto hover:bg-indigo-50 hover:border-indigo-200'>
+                        <Mail className="h-5 w-5 text-indigo-600" />
+                        <span>LinkedIn</span>
+                    </Button>
                 </div>
             </div>
-            <div className='flex w-full gap-5 justify-between mt-6'>
-                <Link href={'/dashboard'}>
-                    <Button variant={'outline'}><ArrowLeft/>Back To dashboard</Button>
+
+            {/* Action Buttons */}
+            <div className='flex flex-col sm:flex-row w-full gap-4 justify-between'>
+                <Link href={'/dashboard'} className="flex-1">
+                    <Button variant={'outline'} className="w-full flex items-center justify-center space-x-2 p-4 h-auto">
+                        <ArrowLeft className="h-4 w-4" />
+                        <span>Back To Dashboard</span>
+                    </Button>
                 </Link>
-                <Link href={'/create-interview'}>
-                    <Button className='text-blue-500 bg-blue-200 hover:bg-blue-300'><PlusIcon/>Create New Interview</Button>
+                <Link href={'/dashboard/create-interview'} className="flex-1">
+                    <Button className='w-full bg-blue-600 hover:bg-blue-700 text-white flex items-center justify-center space-x-2 p-4 h-auto'>
+                        <PlusIcon className="h-4 w-4" />
+                        <span>Create New Interview</span>
+                    </Button>
                 </Link>
             </div>
         </div>

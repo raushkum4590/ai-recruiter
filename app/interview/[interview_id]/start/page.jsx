@@ -209,7 +209,7 @@ function Startinterview() {
 
       // Combine all questions into one string
       const questionList = interviewInfo.interviewData.questionList
-        .map((item) => item.question)
+        .map((item) => typeof item === 'string' ? item : item.question)
         .join(", ");
 
       console.log("Question list prepared:", questionList.substring(0, 100) + "...");

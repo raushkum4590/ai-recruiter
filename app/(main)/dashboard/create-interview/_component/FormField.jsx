@@ -1,7 +1,7 @@
 "use client"
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
-import React, { useEffect, useState } from 'react'
+import React, { useState } from 'react'
 import {
     Select,
     SelectContent,
@@ -15,20 +15,11 @@ import { ArrowRight } from 'lucide-react'
   
 function FormField({ onHandleInputChange, GoToNext }) {
     const [interviewType, setInterviewType] = useState([]);
-    
-    // Fix: Only update when interviewType actually changes and has values
-    useEffect(() => {
-        // Only call onHandleInputChange if interviewType is not empty
-        if (interviewType && interviewType.length > 0) {
-            onHandleInputChange('type', interviewType);
-        }
-    }, [interviewType]); // Intentionally removing onHandleInputChange from deps to prevent loop
 
     const handleInterviewTypeClick = (typeName) => {
-        // Check if type is already selected to avoid duplicates
-        if (!interviewType.includes(typeName)) {
-            setInterviewType(prev => [...prev, typeName]);
-        }
+        // Allow only one type selection - replace existing
+        setInterviewType([typeName]);
+        onHandleInputChange('type', typeName);
     };
 
     return (
@@ -53,7 +44,11 @@ function FormField({ onHandleInputChange, GoToNext }) {
             
             <div className='mt-5'>
                 <h2 className='text-sm font-medium'>Interview Duration</h2>
-                <Select onValueChange={(value) => onHandleInputChange('duration', value)}>
+                <Select onValueChange={(value) => {
+                    // Extract just the number from "15 Min" -> "15"
+                    const durationNum = value.split(' ')[0];
+                    onHandleInputChange('duration', durationNum);
+                }}>
                     <SelectTrigger className="w-full mt-2">
                         <SelectValue placeholder="select Duration" />
                     </SelectTrigger>

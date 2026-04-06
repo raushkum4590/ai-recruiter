@@ -1,3 +1,5 @@
+'use client';
+
 import axios from 'axios';
 import React, { useEffect, useState } from 'react';
 import { Loader, Loader2 } from 'lucide-react';
@@ -12,36 +14,87 @@ function QuestionList({ formData, onCreateLink }) {
   const [questionList, setQuestionList] = useState([]);
   const { user } = useUser();
   const [saveLoading, setSaveLoading] = useState(false);
+  const [apiWarning, setApiWarning] = useState('');
 
   useEffect(() => {
-    if (formData) generateQuestionList();
-    else setLoading(false);
+    if (formData && formData.jobPosition && formData.jobDescription && formData.duration && formData.type) {
+      generateQuestionList();
+    } else {
+      setLoading(false);
+    }
   }, [formData]);
+  
   const generateQuestionList = async () => {
     setLoading(true);
+    setApiWarning('');
+    
+    // Log what we're sending - stringify to see exact format
+    console.log('[QuestionList] formData:', JSON.stringify(formData, null, 2));
+    console.log('[QuestionList] formData types:', {
+      jobPosition: typeof formData.jobPosition,
+      jobDescription: typeof formData.jobDescription,
+      duration: typeof formData.duration,
+      type: typeof formData.type
+    });
+    
     try {
-      const res = await axios.post('/api/ai-model', { ...formData });
+      const res = await axios.post('/api/ai-model', formData);
+      console.log('API Response:', res.data);
+      
       let raw = res.data.questions || res.data.question;
       let parsed = [];
   
-      if (typeof raw === 'string') {
-        const match = raw.match(/```(?:json)?\s*([\s\S]*?)\s*```/i);
-        const jsonString = match ? match[1] : raw;
-  
-        try {
-          parsed = JSON.parse(jsonString);
-        } catch (parseError) {
-          console.error('Error parsing JSON:', parseError);
-          parsed = [];
-        }
-      } else if (Array.isArray(raw)) {
-        parsed = raw;
+      // Handle the new plain text format (array of strings)
+      if (Array.isArray(raw)) {
+        // Each item is a plain text question string
+        parsed = raw.map((questionText, index) => ({
+          question: questionText,
+          type: 'General' // Default type since we're using plain text
+        }));
+      } else if (typeof raw === 'string') {
+        // Single question as string
+        parsed = [{ question: raw, type: 'General' }];
+      } else {
+        // Fallback - empty array
+        console.warn('Unexpected question format received:', raw);
+        parsed = [];
       }
   
+      console.log('Parsed questions:', parsed);
       setQuestionList(parsed);
+      
+      // Show warning if API used fallback
+      if (res.data.warning) {
+        setApiWarning(res.data.warning);
+        console.warn('API Warning:', res.data.warning);
+      }
     } catch (e) {
-      console.error('Error fetching questions:', e);
-      setQuestionList([]);
+      console.error('Error fetching questions:', e.response?.data || e.message);
+      
+      // Extract error message from response
+      const errorData = e.response?.data;
+      const errorMsg = errorData?.error || e.message;
+      
+      // Try to extract and use fallback questions from error response
+      if (e.response?.data?.questions) {
+        const parsed = e.response.data.questions.map((q) => ({
+          question: typeof q === 'string' ? q : q.question,
+          type: 'General'
+        }));
+        setQuestionList(parsed);
+        setApiWarning('Using fallback questions due to API issue');
+      } else if (e.response?.status === 400) {
+        // Validation error - show message and use fallback
+        console.warn('Validation error:', errorMsg);
+        setApiWarning(`Form validation error: ${errorMsg}`);
+        setQuestionList([]);
+        toast.error(`Form error: ${errorMsg}`);
+      } else {
+        // Network or server error - fall back to defaults
+        setQuestionList([]);
+        setApiWarning('Failed to generate questions. Please try again.');
+        toast.error('Failed to generate interview questions');
+      }
     } finally {
       setLoading(false);
     }
@@ -57,13 +110,15 @@ function QuestionList({ formData, onCreateLink }) {
         throw new Error('Invalid interview ID generated');
       }
 
-      // Insert into database
+      // Insert into database - save only the question text as plain strings
+      const plainTextQuestions = questionList.map(item => item.question);
+      
       const { data, error } = await supabase
         .from('Interviews')
         .insert([
           { 
             ...formData,
-            questionList: questionList,
+            questionList: plainTextQuestions, // Save as plain text array
             userEmail: user?.email,
             interview_id: interview_id
           },
@@ -102,6 +157,13 @@ function QuestionList({ formData, onCreateLink }) {
         </div>
       ) : (
         <div className="space-y-4">
+          {apiWarning && (
+            <div className="p-4 bg-yellow-50 border border-yellow-200 rounded-xl">
+              <p className="text-sm text-yellow-800">
+                ℹ️ {apiWarning}
+              </p>
+            </div>
+          )}
           {questionList.length > 0 ? (
             questionList.map((item, idx) => {
               const isFirst = idx === 0;
