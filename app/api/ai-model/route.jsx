@@ -148,7 +148,7 @@ export async function POST(req) {
       }
     }
 
-    // Step 5: Call OpenRouter API
+    // Step 5: Call OpenRouter API with fallback
     try {
       console.log("[API] Calling OpenRouter API...");
       const openai = new OpenAI({
@@ -176,7 +176,12 @@ export async function POST(req) {
 
       // Parse the response - now expecting plain text format
       if (!completion?.choices?.[0]?.message?.content) {
-        throw new Error("Invalid response from OpenRouter API - no content");
+        console.warn("[API] No content in response, using fallback");
+        const fallbackQuestions = generateFallbackQuestions(jobPosition, jobDescription, duration, type);
+        return NextResponse.json({
+          questions: fallbackQuestions.map(q => q.question),
+          warning: "Using fallback - API response was empty"
+        });
       }
 
       const message = completion.choices[0].message;
@@ -204,9 +209,14 @@ export async function POST(req) {
       
       // Ensure we have at least some questions - convert fallback to plain text
       if (questions.length === 0) {
-        console.log("[API] No questions from API, using fallback");
+        console.log("[API] No questions parsed, using fallback");
         const fallbackQuestions = generateFallbackQuestions(jobPosition, jobDescription, duration, type);
         questions = fallbackQuestions.map(q => q.question);
+        
+        return NextResponse.json({
+          questions,
+          warning: "Using fallback questions - API response parsing failed"
+        });
       }
       
       console.log("[API] Returning", questions.length, "questions");
@@ -215,21 +225,31 @@ export async function POST(req) {
       console.error("[API] OpenRouter API Error:", {
         message: apiError?.message,
         status: apiError?.status,
+        code: apiError?.code,
         type: apiError?.type
       });
       
-      // For any API errors, return fallback questions instead of failing completely
-      console.log("[API] Returning fallback due to API error");
+      // For ANY API error, ALWAYS return fallback questions - NEVER 500
+      console.log("[API] API failed, returning fallback questions");
       try {
         const fallbackQuestions = generateFallbackQuestions(jobPosition, jobDescription, duration, type);
-        return NextResponse.json({ 
+        return NextResponse.json({
           questions: fallbackQuestions.map(q => q.question),
-          warning: "Generated using fallback questions due to API issue",
-          originalError: apiError?.message 
+          warning: "Generated using fallback questions due to API error",
+          originalError: apiError?.message || "Unknown API error"
         });
       } catch (fallbackError) {
-        console.error("[API] Fallback also failed:", fallbackError);
-        throw fallbackError;
+        console.error("[API] Even fallback failed:", fallbackError);
+        // Ultimate fallback - hardcoded questions as last resort
+        const ultimateFallback = [
+          "Tell me about your background and experience relevant to this role.",
+          "What interests you about this opportunity?",
+          "Describe a challenging project you worked on."
+        ];
+        return NextResponse.json({
+          questions: ultimateFallback,
+          warning: "Using ultimate fallback - all systems failed"
+        });
       }
     }
   } catch (e) {
@@ -239,12 +259,32 @@ export async function POST(req) {
       type: e?.constructor?.name
     });
     
-    return NextResponse.json(
-      { 
-        error: "Internal server error", 
-        details: e?.message || "Unknown error"
-      },
-      { status: 500 }
-    );
+    // Even in fatal errors, try to return fallback questions
+    try {
+      const fallbackQuestions = generateFallbackQuestions(
+        body?.jobPosition || "Unknown Position",
+        body?.jobDescription || "No description",
+        body?.duration || 30,
+        body?.type || "General"
+      );
+      return NextResponse.json({
+        questions: fallbackQuestions.map(q => q.question),
+        warning: "Fatal error occurred - using fallback questions",
+        error: e?.message
+      });
+    } catch (lastResortError) {
+      console.error("[API] All recovery attempts failed:", lastResortError);
+      // Ultimate fallback - hardcoded questions
+      return NextResponse.json({
+        questions: [
+          "Tell me about your background and experience.",
+          "What interests you about this opportunity?",
+          "Describe a challenging project you worked on.",
+          "How do you handle working under pressure?",
+          "What are your key strengths for this role?"
+        ],
+        warning: "Critical failure - ultimate fallback questions used"
+      });
+    }
   }
 }
