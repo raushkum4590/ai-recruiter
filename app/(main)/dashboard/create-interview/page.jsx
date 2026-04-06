@@ -7,15 +7,6 @@ import FormField from './_component/FormField'
 import QuestionList from './_component/QuestionList'
 import { toast } from 'sonner'
 import InterviewLink from './_component/InterviewLink'
-import { useUser } from '@/app/provider't"
-import { ArrowLeft } from 'lucide-react'
-import { useRouter } from 'next/navigation'
-import React, { useState, useEffect } from 'react'
-import { Progress } from "@/components/ui/progress"
-import FormField from './_component/FormField'
-import QuestionList from './_component/QuestionList'
-import { toast } from 'sonner'
-import InterviewLink from './_component/InterviewLink'
 import { useUser } from '@/app/provider'
 
 function CreateInterview() {
