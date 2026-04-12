@@ -67,6 +67,8 @@ function QuestionList({ formData, onCreateLink }) {
       if (res.data.warning) {
         setApiWarning(res.data.warning);
         console.warn('API Warning:', res.data.warning);
+        console.warn('Original Error:', res.data.originalError);
+        console.warn('Debug Info:', res.data.debug);
       }
     } catch (e) {
       console.error('Error fetching questions:', e.response?.data || e.message);

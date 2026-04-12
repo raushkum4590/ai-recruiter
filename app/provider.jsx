@@ -8,10 +8,41 @@ function Provider({ children }) {
     
   useEffect(() => {
     createNewUser();
+    
+    // Handle session updates
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      if (event === 'SIGNED_OUT' || event === 'TOKEN_REFRESHED') {
+        createNewUser();
+      }
+    });
+    
+    return () => {
+      subscription?.unsubscribe();
+    };
   }, [])
     
   const createNewUser = async () => {
     try {
+      // Clear any invalid sessions that might cause clock skew errors
+      const { data: { session } } = await supabase.auth.getSession();
+      
+      if (session) {
+        try {
+          const { data: { user: authUser } } = await supabase.auth.getUser();
+          
+          if (!authUser) {
+            // Session is invalid, clear it
+            await supabase.auth.signOut();
+            return;
+          }
+        } catch (error) {
+          // Clock skew or invalid token, try to refresh
+          console.warn("Session validation error, attempting refresh:", error.message);
+          await supabase.auth.refreshSession();
+          return;
+        }
+      }
+      
       const { data: { user: authUser } } = await supabase.auth.getUser();
                     
       if (!authUser) return;
@@ -53,6 +84,17 @@ function Provider({ children }) {
       }
     } catch (error) {
       console.error("Authentication error:", error.message);
+      // If it's a clock skew error, clear the session and try again
+      if (error.message?.includes('future') || error.message?.includes('skew')) {
+        try {
+          await supabase.auth.signOut();
+          // Clear local storage of any cached tokens
+          localStorage.removeItem('sb-ypndnsyvgkxcuuhrhnjs-auth-token');
+          window.location.reload();
+        } catch (logoutError) {
+          console.error("Logout error:", logoutError.message);
+        }
+      }
     }
   }
     
