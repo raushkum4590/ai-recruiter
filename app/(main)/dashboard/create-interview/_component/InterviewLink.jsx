@@ -10,45 +10,17 @@ import { toast } from 'sonner';
 
 function InterviewLink({ interview_id, formData }) {
     const [url, setUrl] = useState('');
-    const [isUrlValid, setIsUrlValid] = useState(true);
-    const [deploymentType, setDeploymentType] = useState('');
-    
-    // Function to generate a valid production URL
     const getProductionUrl = (id) => {
-        // ALWAYS use the hardcoded production URL
         return `https://ai-recruiter-nu.vercel.app/interview/${id}`;
     };
-    
+
     useEffect(() => {
-        console.log('InterviewLink component received interview_id:', interview_id);
-        
-        // Get the current window location when component mounts (client-side only)
-        if (typeof window !== 'undefined') {
-            try {
-                // Make sure interview_id exists and is not undefined
-                if (!interview_id) {
-                    console.error('Interview ID is missing');
-                    setIsUrlValid(false);
-                    return;
-                }
-                
-                // ALWAYS use the production URL - NO EXCEPTIONS
-                const interviewUrl = getProductionUrl(interview_id);
-                setUrl(interviewUrl);
-                
-                setDeploymentType(isVercel ? 'Vercel' : (isProduction ? 'Production' : 'Local'));
-                
-                setUrl(interviewUrl);
-                
-                // Log the URL for debugging
-                console.log('Environment:', isVercel ? 'Vercel' : (isProduction ? 'Production' : 'Local'));
-                console.log('Generated interview URL:', interviewUrl);
-            } catch (error) {
-                console.error('Error generating URL:', error);
-                setIsUrlValid(false);
-            }
+        if (interview_id) {
+            setUrl(getProductionUrl(interview_id));
         }
-    }, [interview_id]);    const onCopyLink = async () => {
+    }, [interview_id]);
+
+    const onCopyLink = async () => {
         try {
             // Always copy the production URL
             const productionUrl = getProductionUrl(interview_id);
@@ -99,12 +71,6 @@ function InterviewLink({ interview_id, formData }) {
                         </Button>
                     </div>
 
-                    {!isUrlValid && (
-                        <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg">
-                            <p className="text-red-600 text-sm">⚠️ There might be an issue with this URL. Please verify it works correctly.</p>
-                        </div>
-                    )}
-                    
                     <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
                         <p className="text-blue-800 text-sm font-medium mb-2">📋 Share this official interview link:</p>
                         <p className="text-blue-700 text-sm">Send this link directly to candidates via email, messaging platforms, or your preferred communication method.</p>
