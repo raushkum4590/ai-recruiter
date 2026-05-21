@@ -105,22 +105,32 @@ Remember: Generate natural, flowing questions without any JSON formatting, brack
 
 
 export const FEEDBACK_PROMPT=`{{conversation}}
-Depends on this Interview Conversation between assistant and user,
-Give me feedback for user interview. Give me rating out of 10 for technical Skills, Communication, Problem Solving, Experience. Also give me summery in 3 lines about the interview and one line to let me know whether is recommanded for hire or not with msg. Give me response in JSON format
+
+Based on this interview conversation between an AI interviewer (assistant) and the candidate (user), provide a detailed evaluation.
+
+Rate the candidate out of 10 in each category and give honest, specific feedback. Return ONLY valid JSON in this exact format:
+
 {
-  feedback: {
-    rating: {
-      techicalSkills: 7,
-      communication: 6,
-      problemSolving: 5,
-      experince: 4
+  "feedback": {
+    "rating": {
+      "technicalSkills": 7,
+      "communication": 6,
+      "problemSolving": 5,
+      "experience": 4
     },
-    summery: <in 3 Line>,
-    Recommendation: "",
-    RecommendationMsg: ""
+    "summary": "3-sentence summary of the candidate's overall performance, strengths, and areas to improve.",
+    "recommendation": "Recommended" or "Not Recommended",
+    "recommendationMsg": "One concise sentence explaining the hiring recommendation."
   }
 }
 
-`;
+Rating guidelines:
+- technicalSkills: depth of technical knowledge, accuracy of answers
+- communication: clarity, structure, articulation
+- problemSolving: approach to challenges, analytical thinking
+- experience: relevance and quality of past experience shared
+
+Return only the JSON object, no extra text.`;
+
 
 
