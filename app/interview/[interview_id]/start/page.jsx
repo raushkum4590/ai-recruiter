@@ -22,8 +22,8 @@ function Startinterview() {
   const [timer, setTimer] = useState(0);
   const vapiRef = useRef(null);
   const callAttempted = useRef(false);
-  // Ref to store conversation data safely between renders
   const conversationRef = useRef([]);
+  const feedbackTriggeredRef = useRef(false);
   
   // Debug route information
   useEffect(() => {
@@ -59,66 +59,52 @@ function Startinterview() {
           });
           
           vapiRef.current.on("call-end", () => {
-            console.log("Call has ended.");
             setCallActive(false);
             setTimer(0);
-            
-            // Set conversation state from our ref for final update
-            setConversation([...conversationRef.current]);
-            
-            // Wait a moment to ensure any final conversation updates are processed
+            feedbackTriggeredRef.current = false;
+            // Give end-of-call-report time to arrive; fall back if it doesn't
             setTimeout(() => {
-              if (conversationRef.current.length > 0) {
-                console.log("Generating feedback with", conversationRef.current.length, "messages");
-                GeneratedFeedback();
-              } else {
-                console.error("No conversation data available after call ended");
-                setError("Interview ended but no conversation data was captured");
+              if (!feedbackTriggeredRef.current) {
+                if (conversationRef.current.length > 0) {
+                  feedbackTriggeredRef.current = true;
+                  GeneratedFeedback();
+                } else {
+                  setError("Interview ended but no conversation was captured. Please try again.");
+                }
               }
-            }, 1000);
+            }, 4000);
           });
-          
-          // Handle different message types from Vapi
+
           vapiRef.current.on("message", (message) => {
-            console.log("Message event received:", message);
-            
-            // If this is a conversation update with a full history
-            if (message?.conversation && Array.isArray(message.conversation)) {
-              console.log("Full conversation update received:", message.conversation.length, "messages");
-              conversationRef.current = [...message.conversation];
-              setConversation([...message.conversation]);
+            // end-of-call-report arrives after call-end and has the full conversation
+            if (message?.type === 'end-of-call-report') {
+              const msgs = message.messages || message.conversation || [];
+              if (msgs.length > 0) {
+                conversationRef.current = msgs;
+                setConversation([...msgs]);
+              }
+              if (!feedbackTriggeredRef.current) {
+                feedbackTriggeredRef.current = true;
+                GeneratedFeedback();
+              }
+              return;
             }
-            // If this is a transcript message (user's speech-to-text)
-            else if (message?.type === 'transcript' && message?.transcript) {
-              const userMessage = {
-                role: "user", 
-                content: message.transcript
-              };
-              console.log("User transcript received:", userMessage);
-              // Only add if it's not already there (avoid duplicates)
-              if (!conversationRef.current.some(msg => 
-                msg.role === "user" && msg.content === message.transcript)) {
-                conversationRef.current.push(userMessage);
+
+            // Periodic full-conversation snapshots
+            const msgs = message?.messages || message?.conversation;
+            if (Array.isArray(msgs) && msgs.length > 0) {
+              conversationRef.current = [...msgs];
+              setConversation([...msgs]);
+              return;
+            }
+
+            // Individual final transcript lines
+            if (message?.type === 'transcript' && message?.transcriptType === 'final' && message?.transcript) {
+              const entry = { role: message.role || 'user', content: message.transcript };
+              if (!conversationRef.current.some(m => m.role === entry.role && m.content === entry.content)) {
+                conversationRef.current.push(entry);
                 setConversation([...conversationRef.current]);
               }
-            }
-            // If this is the assistant's response
-            else if (message?.type === 'model-output' && message?.output) {
-              const assistantMessage = {
-                role: "assistant",
-                content: message.output
-              };
-              console.log("Assistant output received:", assistantMessage);
-              // Only add if it's not already there (avoid duplicates)
-              if (!conversationRef.current.some(msg => 
-                msg.role === "assistant" && msg.content === message.output)) {
-                conversationRef.current.push(assistantMessage);
-                setConversation([...conversationRef.current]);
-              }
-            }
-            // Any other message types we want to log but not process
-            else {
-              console.log("Other message type received:", message);
             }
           });
           
