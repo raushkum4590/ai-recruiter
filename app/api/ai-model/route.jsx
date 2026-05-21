@@ -1,29 +1,32 @@
 import { QUESTION_PROMPT } from "@/services/constants";
 import { NextResponse } from "next/server";
+import fs from "fs";
+import path from "path";
+
+function getOpenRouterKey() {
+  const fromEnv = process.env.OPENROUTER_API_KEY;
+  console.log("[KEY] from process.env:", fromEnv ? `set (${fromEnv.length} chars)` : "undefined");
+  if (fromEnv) return fromEnv;
+  try {
+    const envPath = path.join(process.cwd(), ".env.local");
+    console.log("[KEY] reading file:", envPath);
+    const content = fs.readFileSync(envPath, "utf8");
+    console.log("[KEY] file lines:", content.split(/\r?\n/).length);
+    for (const line of content.split(/\r?\n/)) {
+      if (line.startsWith("OPENROUTER_API_KEY=")) {
+        const val = line.slice("OPENROUTER_API_KEY=".length).trim();
+        console.log("[KEY] found in file:", val ? `set (${val.length} chars)` : "empty");
+        return val || null;
+      }
+    }
+    console.log("[KEY] key not found in file");
+  } catch (e) {
+    console.log("[KEY] file read error:", e.message);
+  }
+  return null;
+}
 
 export const dynamic = 'force-dynamic';
-
-// Retry helper with exponential backoff for rate limits
-async function callWithRetry(fn, maxRetries = 3, baseDelay = 2000) {
-  for (let attempt = 0; attempt <= maxRetries; attempt++) {
-    try {
-      return await fn();
-    } catch (error) {
-      const isRateLimit = error?.status === 429 || 
-        error?.message?.includes('429') || 
-        error?.message?.includes('Too Many Requests') ||
-        error?.message?.includes('quota');
-      
-      if (isRateLimit && attempt < maxRetries) {
-        const delay = baseDelay * Math.pow(2, attempt); // 2s, 4s, 8s
-        console.log(`[API] Rate limited (429). Retry ${attempt + 1}/${maxRetries} in ${delay}ms...`);
-        await new Promise(resolve => setTimeout(resolve, delay));
-        continue;
-      }
-      throw error;
-    }
-  }
-}
 
 // Fallback question generation based on job type and duration
 const generateFallbackQuestions = (jobPosition, jobDescription, duration, type) => {
@@ -55,18 +58,11 @@ function parseQuestions(responseText, maxQuestions = 10) {
     .map(line => line.trim())
     .filter(line => {
       if (line.length < 20) return false;
-      // Skip headers, labels, meta-commentary, markdown, and model self-checks
       if (/^(#{1,3}\s|---|\*{2,}|Role:|Job |Interview |Goal:|Constraints?:|Target |Note:|Selection|Final |Must |Category|Self-Correction|Okay|Plain text|One per line|No preamble|Relevant to|No JSON|Question Categories)/i.test(line)) return false;
-      // Skip lines that are just labels/markers/emojis
       if (/^(\*.*\*:?|✅|📝|🎯|Example format:?)$/i.test(line)) return false;
-      // Skip lines ending with colons (section headers)
       if (/:\s*$/.test(line) && line.length < 80) return false;
-      // Skip self-check lines like "Plain text? Yes." or "Constraint Check:* 5 questions? Yes."
       if (/\?\s*(Yes|No|Check|Done|Correct)[\.!\s]/i.test(line)) return false;
-      // Skip lines that are pure commentary/meta
       if (/^(This is|I should|I will|I need|Let me|Here are|Below are|The following|Now |Since |Given |Based on |For a |A |Note:|Constraint)/i.test(line)) return false;
-      // Must contain a question mark OR start with interview-style action verbs
-      // But only if the question mark is at the end (actual question) not mid-sentence meta
       if (line.endsWith('?')) return true;
       if (line.includes('?') && !line.match(/\?\s*(Yes|No|and|or|\d)/i)) return true;
       if (/^(Tell|Describe|Explain|Walk|Share|Discuss)/i.test(line)) return true;
@@ -74,19 +70,18 @@ function parseQuestions(responseText, maxQuestions = 10) {
     })
     .map(line => {
       return line
-        .replace(/^\d+[\.\\)]\s*/, '')         // Remove "1. " or "1) "
-        .replace(/^[-\*•]+\s*/, '')            // Remove all leading bullets/asterisks
-        .replace(/^\*+\s*/, '')                // Remove remaining asterisks
-        .replace(/^Question\s*\d*\s*(\([^)]*\))?\s*:?\s*\*{0,2}\s*/i, '')  // Remove "Question 1 (Category):**"
+        .replace(/^\d+[\\.\\)]\s*/, '')
+        .replace(/^[-\*•]+\s*/, '')
+        .replace(/^\*+\s*/, '')
+        .replace(/^Question\s*\d*\s*(\([^)]*\))?\s*:?\s*\*{0,2}\s*/i, '')
         .replace(/^\(?(Technical|Behavioral|Problem Solving|Experience|Leadership|Professionalism|Growth|Teamwork|Frontend|Backend|Full.?Stack|CSS|Styling)[^:)]*[\/\)]:?\s*\*?\s*/i, '')
-        .replace(/^Draft\s*\d*\s*:?\s*\*?\s*/i, '') // Remove "Draft 1:*" etc.
-        .replace(/^\([^)]{3,40}\):?\s*\*?\s*/i, '') // Catch-all: remove any "(Label):*" prefix
-        .replace(/^["']|["']$/g, '')           // Remove surrounding quotes
-        .replace(/\s*->.*$/, '')               // Remove trailing commentary
+        .replace(/^Draft\s*\d*\s*:?\s*\*?\s*/i, '')
+        .replace(/^\([^)]{3,40}\):?\s*\*?\s*/i, '')
+        .replace(/^["']|["']$/g, '')
+        .replace(/\s*->.*$/, '')
         .trim();
     })
     .filter(q => q.length > 20)
-    // Deduplicate: remove questions that are near-identical (first 50 chars match)
     .filter((q, i, arr) => {
       const prefix = q.substring(0, 50).toLowerCase();
       return arr.findIndex(other => other.substring(0, 50).toLowerCase() === prefix) === i;
@@ -95,8 +90,7 @@ function parseQuestions(responseText, maxQuestions = 10) {
   return questions.slice(0, maxQuestions);
 }
 
-// Models to try in order of preference - Using valid Google Generative AI models
-const MODELS = ["gemma-4-31b-it"];
+const MODEL_NAME = "nvidia/nemotron-3-nano-omni-30b-a3b-reasoning:free";
 
 export async function POST(req) {
   let body;
@@ -147,103 +141,102 @@ export async function POST(req) {
     console.log("[API] Prompt generated successfully");
 
     // Step 4: Check API key
-    const apiKey = process.env.GEMINI_API_KEY || process.env.NEXT_PUBLIC_GEMINI_API_KEY;
+    const apiKey = getOpenRouterKey();
     if (!apiKey) {
-      console.warn("[API] GEMINI_API_KEY not set, returning fallback");
+      console.warn("[API] OPENROUTER_API_KEY not set, returning fallback");
       return NextResponse.json({ 
         questions: generateFallbackQuestions(jobPosition, jobDescription, duration, type),
         warning: "Generated using fallback questions - API key not configured"
       });
     }
 
-    // Validate API key format
-    if (apiKey.length < 20) {
-      console.error("[API] GEMINI_API_KEY appears invalid (too short)");
-      return NextResponse.json({
-        questions: generateFallbackQuestions(jobPosition, jobDescription, duration, type),
-        warning: "Generated using fallback questions - Invalid API key format",
-        error: "API key validation failed"
-      });
-    }
+    // Step 5: Call OpenRouter API
+    try {
+      console.log(`[API] Calling ${MODEL_NAME}...`);
 
-    // Step 5: Call API with retry + model fallback
-    let lastError = null;
-
-    for (const modelName of MODELS) {
-      try {
-        console.log(`[API] Trying model: ${modelName}...`);
-        
-        const result = await callWithRetry(
-          () => fetch('https://api.together.xyz/inference', {
-            method: 'POST',
+      let responseText;
+      let lastApiError;
+      
+      for (let attempt = 0; attempt < 3; attempt++) {
+        try {
+          const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
+            method: "POST",
             headers: {
-              'Authorization': `Bearer ${apiKey}`,
-              'Content-Type': 'application/json'
+              "Authorization": `Bearer ${apiKey}`,
+              "HTTP-Referer": "http://localhost:3000",
+              "X-Title": "AI Recruiter",
+              "Content-Type": "application/json",
             },
             body: JSON.stringify({
-              model: modelName,
-              prompt: FINAL_PROMPT,
-              max_tokens: 2000,
+              model: MODEL_NAME,
+              messages: [
+                {
+                  role: "system",
+                  content: "You are an expert interviewer. Generate interview questions exactly as instructed. Output ONLY the questions, one per line. No numbering, no labels, no commentary."
+                },
+                {
+                  role: "user",
+                  content: FINAL_PROMPT
+                }
+              ],
               temperature: 0.7,
-              top_p: 0.9,
-              top_k: 40,
-              repetition_penalty: 1.0
-            })
-          }).then(r => {
-            if (!r.ok) throw new Error(`API Error: ${r.status} ${r.statusText}`);
-            return r.json();
-          }),
-          3,  // max retries
-          2000 // base delay 2s
-        );
-        
-        const responseText = result.output?.result || result.output || '';
-        console.log(`[API] ${modelName} responded, length: ${responseText?.length || 0}`);
-        
-        if (!responseText) {
-          console.warn(`[API] ${modelName} returned empty response, trying next model...`);
-          continue;
-        }
+              max_tokens: 2000,
+            }),
+          });
 
-        const questions = parseQuestions(responseText, targetQuestionCount);
-        console.log(`[API] Parsed ${questions.length} questions from ${modelName} (target: ${targetQuestionCount})`);
-        
-        if (questions.length === 0) {
-          console.warn(`[API] No valid questions parsed from ${modelName}, trying next model...`);
-          continue;
+          if (!response.ok) {
+            const errorData = await response.json().catch(() => ({}));
+            const statusCode = response.status;
+            
+            if (statusCode === 429 && attempt < 2) {
+              const delay = 3000 * Math.pow(2, attempt);
+              console.log(`[API] Rate limited (429). Retry ${attempt + 1}/2 in ${delay}ms...`);
+              await new Promise(resolve => setTimeout(resolve, delay));
+              continue;
+            }
+            
+            throw new Error(`OpenRouter API error ${statusCode}: ${errorData?.error?.message || response.statusText}`);
+          }
+
+          const data = await response.json();
+          responseText = data.choices?.[0]?.message?.content;
+          
+          if (!responseText) {
+            throw new Error("Empty response from API");
+          }
+          
+          break; // success
+        } catch (retryError) {
+          lastApiError = retryError;
+          if (attempt === 2) {
+            throw retryError;
+          }
         }
-        
-        return NextResponse.json({ questions, model: modelName });
-      } catch (error) {
-        const errorMsg = error?.message || "Unknown error";
-        console.error(`[API] ${modelName} failed:`, errorMsg.substring(0, 200));
-        
-        // Log more details for debugging
-        if (error?.status) console.error(`[API] Status: ${error.status}`);
-        if (error?.code) console.error(`[API] Code: ${error.code}`);
-        
-        lastError = error;
-        // Continue to next model
       }
+
+      console.log(`[API] OpenRouter responded, length: ${responseText?.length || 0}`);
+
+      const questions = parseQuestions(responseText, targetQuestionCount);
+      console.log(`[API] Parsed ${questions.length} questions (target: ${targetQuestionCount})`);
+
+      if (questions.length === 0) {
+        console.warn("[API] No valid questions parsed, using fallback");
+        return NextResponse.json({
+          questions: generateFallbackQuestions(jobPosition, jobDescription, duration, type),
+          warning: "Could not parse AI response - using fallback questions"
+        });
+      }
+
+      return NextResponse.json({ questions, model: MODEL_NAME });
+
+    } catch (apiError) {
+      console.error("[API] API error:", apiError?.message?.substring(0, 300));
+      return NextResponse.json({
+        questions: generateFallbackQuestions(jobPosition, jobDescription, duration, type),
+        warning: "OpenRouter API error - using fallback questions",
+        originalError: apiError?.message || "API call failed"
+      });
     }
-
-    // All models failed — return fallback
-    console.error("[API] All models failed. Last error:", lastError?.message);
-    console.error("[API] Last error details:", {
-      status: lastError?.status,
-      code: lastError?.code,
-      message: lastError?.message,
-      fullMessage: lastError?.toString()
-    });
-    return NextResponse.json({
-      questions: generateFallbackQuestions(jobPosition, jobDescription, duration, type),
-      warning: "Generated using fallback questions due to API error",
-      originalError: lastError?.message || "All models failed",
-      debug: {
-        modelsAttempted: MODELS,
-        errorDetails: lastError?.message?.substring(0, 500)
-      }
-    });
 
   } catch (e) {
     console.error("[API] FATAL ERROR:", e?.message);
