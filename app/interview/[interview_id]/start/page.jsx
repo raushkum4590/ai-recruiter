@@ -48,8 +48,13 @@ function Startinterview() {
         
         if (process.env.NEXT_PUBLIC_VAPI_PUBLIC_KEY) {
           vapiRef.current = new Vapi(process.env.NEXT_PUBLIC_VAPI_PUBLIC_KEY);
-          
-          // Set up event listeners on the instance properly
+
+          vapiRef.current.on("error", (e) => {
+            console.error("Vapi error:", e);
+            setError(`Call error: ${e?.message || e?.errorMsg || JSON.stringify(e)}`);
+            setCallActive(false);
+          });
+
           vapiRef.current.on("call-start", () => {
             console.log("Call has started.");
             setCallActive(true);
@@ -210,12 +215,12 @@ function Startinterview() {
           language: "en-US",
         },
         voice: {
-          provider: "playht",
-          voiceId: "jennifer",
+          provider: "openai",
+          voiceId: "alloy",
         },
         model: {
           provider: "openai",
-          model: "gpt-4",
+          model: "gpt-3.5-turbo",
           messages: [
             {
               role: "system",
