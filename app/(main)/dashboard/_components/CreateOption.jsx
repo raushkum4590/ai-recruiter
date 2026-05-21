@@ -27,9 +27,9 @@ function CreateOption() {
   ]
 
   const quickActions = [
-    { icon: <Users className="h-5 w-5" />, label: 'View All Interviews', href: '/dashboard/all-interview' },
-    { icon: <Clock className="h-5 w-5" />, label: 'Scheduled Interviews', href: '/dashboard/scheduled-interviews' },
-    { icon: <Zap className="h-5 w-5" />, label: 'Analytics', href: '/dashboard/analytics' },
+    { icon: <Users className="h-5 w-5" />, label: 'View All Interviews', href: '/all-interview' },
+    { icon: <Clock className="h-5 w-5" />, label: 'Scheduled Interviews', href: '/scheduled-interviews' },
+    { icon: <Zap className="h-5 w-5" />, label: 'Billing & Plans', href: '/billing' },
   ]
 
   return (

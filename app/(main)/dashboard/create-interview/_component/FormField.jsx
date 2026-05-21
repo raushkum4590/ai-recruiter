@@ -11,81 +11,100 @@ import {
 } from "@/components/ui/select"
 import { InterviewType } from '@/services/constants'
 import { Button } from '@/components/ui/button'
-import { ArrowRight } from 'lucide-react'
-  
+import { ArrowRight, Briefcase, FileText, Clock, Tag } from 'lucide-react'
+
 function FormField({ onHandleInputChange, GoToNext }) {
     const [interviewType, setInterviewType] = useState([]);
 
     const handleInterviewTypeClick = (typeName) => {
-        // Allow only one type selection - replace existing
         setInterviewType([typeName]);
         onHandleInputChange('type', typeName);
     };
 
     return (
-        <div className='p-5 shadow-md rounded-lg'>
-            <div>
-                <h2 className='text-sm font-medium'>Job Position</h2>
-                <Input 
-                    placeholder="e.g. Full Stack Developer" 
-                    className='mt-2'
-                    onChange={(event) => onHandleInputChange('jobPosition', event.target.value)}
+        <div className='bg-white rounded-2xl shadow-sm border border-gray-100 p-8 space-y-7'>
+
+            {/* Job Position */}
+            <div className='space-y-2'>
+                <label className='flex items-center gap-2 text-sm font-semibold text-gray-700'>
+                    <Briefcase className='h-4 w-4 text-blue-500' />
+                    Job Position
+                </label>
+                <Input
+                    placeholder="e.g. Full Stack Developer, UX Designer, Data Scientist"
+                    className='h-11 border-gray-200 focus:border-blue-400 focus:ring-blue-400'
+                    onChange={(e) => onHandleInputChange('jobPosition', e.target.value)}
                 />
             </div>
-            
-            <div className='mt-5'>
-                <h2 className='text-sm font-medium'>Job Description</h2>
-                <Textarea 
-                    placeholder="enter Detail job Description" 
-                    className='h-[200px] mt-2'
-                    onChange={(event) => onHandleInputChange('jobDescription', event.target.value)}
+
+            {/* Job Description */}
+            <div className='space-y-2'>
+                <label className='flex items-center gap-2 text-sm font-semibold text-gray-700'>
+                    <FileText className='h-4 w-4 text-blue-500' />
+                    Job Description
+                </label>
+                <p className='text-xs text-gray-400'>Include key skills, responsibilities, and requirements</p>
+                <Textarea
+                    placeholder="e.g. 3+ years React experience, Node.js, REST APIs, team collaboration..."
+                    className='h-36 border-gray-200 focus:border-blue-400 resize-none'
+                    onChange={(e) => onHandleInputChange('jobDescription', e.target.value)}
                 />
             </div>
-            
-            <div className='mt-5'>
-                <h2 className='text-sm font-medium'>Interview Duration</h2>
-                <Select onValueChange={(value) => {
-                    // Extract just the number from "15 Min" -> "15"
-                    const durationNum = value.split(' ')[0];
-                    onHandleInputChange('duration', durationNum);
-                }}>
-                    <SelectTrigger className="w-full mt-2">
-                        <SelectValue placeholder="select Duration" />
+
+            {/* Duration */}
+            <div className='space-y-2'>
+                <label className='flex items-center gap-2 text-sm font-semibold text-gray-700'>
+                    <Clock className='h-4 w-4 text-blue-500' />
+                    Interview Duration
+                </label>
+                <Select onValueChange={(value) => onHandleInputChange('duration', value.split(' ')[0])}>
+                    <SelectTrigger className='h-11 border-gray-200 w-full'>
+                        <SelectValue placeholder="Select duration" />
                     </SelectTrigger>
                     <SelectContent>
-                        <SelectItem value="2 Min">2 Min</SelectItem>
-                        <SelectItem value="10 Min">10 Min</SelectItem>
-                        <SelectItem value="15 Min">15 Min</SelectItem>
-                        <SelectItem value="30 Min">30 Min</SelectItem>
-                        <SelectItem value="60 Min">60 Min</SelectItem>
+                        {[2, 10, 15, 30, 60].map(m => (
+                            <SelectItem key={m} value={`${m} Min`}>{m} minutes</SelectItem>
+                        ))}
                     </SelectContent>
                 </Select>
-                
-                <div className='mt-5'>
-                    <h2 className='text-sm font-medium'>Interview Types</h2>
-                    <div className='flex gap-3 flex-wrap mt-2'>
-                        {InterviewType.map((type, index) => {
-                            // Dynamically use the icon component
-                            const IconComponent = type.icon;
-                            
-                            return (
-                                <div 
-                                    key={index} 
-                                    className={`flex items-center gap-2 p-1 px-2 bg-white shadow-md border-gray-300 rounded-2xl cursor-pointer hover:bg-gray-200
-                                        ${interviewType.includes(type.title) ? 'bg-blue-100 text-blue-400' : ''}`}
-                                    onClick={() => handleInterviewTypeClick(type.title)}
-                                >
-                                    <IconComponent className='h-6 w-6' />
-                                    <span>{type.title}</span>
-                                </div>
-                            );
-                        })}
-                    </div>
+            </div>
+
+            {/* Interview Type */}
+            <div className='space-y-3'>
+                <label className='flex items-center gap-2 text-sm font-semibold text-gray-700'>
+                    <Tag className='h-4 w-4 text-blue-500' />
+                    Interview Type
+                </label>
+                <div className='flex gap-3 flex-wrap'>
+                    {InterviewType.map((type, index) => {
+                        const Icon = type.icon;
+                        const selected = interviewType.includes(type.title);
+                        return (
+                            <button
+                                key={index}
+                                type='button'
+                                onClick={() => handleInterviewTypeClick(type.title)}
+                                className={`flex items-center gap-2 px-4 py-2 rounded-xl border-2 text-sm font-medium transition-all duration-200
+                                    ${selected
+                                        ? 'border-blue-500 bg-blue-50 text-blue-700 shadow-sm'
+                                        : 'border-gray-200 bg-white text-gray-600 hover:border-gray-300 hover:bg-gray-50'}`}
+                            >
+                                <Icon className='h-4 w-4' />
+                                {type.title}
+                            </button>
+                        );
+                    })}
                 </div>
             </div>
-            
-            <div className='mt-7 flex justify-end'>
-                <Button onClick={GoToNext}>Generate Question<ArrowRight /></Button>
+
+            <div className='flex justify-end pt-2'>
+                <Button
+                    onClick={GoToNext}
+                    className='bg-blue-600 hover:bg-blue-700 h-11 px-8 text-sm font-semibold rounded-xl'
+                >
+                    Generate Questions
+                    <ArrowRight className='h-4 w-4 ml-2' />
+                </Button>
             </div>
         </div>
     )
