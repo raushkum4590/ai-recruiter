@@ -37,7 +37,7 @@ function parseQuestions(responseText, maxQuestions = 10) {
     .map(line => line.trim())
     .filter(line => {
       if (line.length < 20) return false;
-      if (/^(#{1,3}\s|---|\ *{2,}|Role:|Job |Interview |Goal:|Constraints?:|Target |Note:|Selection|Final |Must |Category|Self-Correction|Okay|Plain text|One per line|No preamble|Relevant to|No JSON|Question Categories)/i.test(line)) return false;
+      if (/^(#{1,3}\s|---| {2,}|Role:|Job |Interview |Goal:|Constraints?:|Target |Note:|Selection|Final |Must |Category|Self-Correction|Okay|Plain text|One per line|No preamble|Relevant to|No JSON|Question Categories)/i.test(line)) return false;
       if (/^(\*.*\*:?|✅|📝|🎯|Example format:?)$/i.test(line)) return false;
       if (/:\s*$/.test(line) && line.length < 80) return false;
       if (/\?\s*(Yes|No|Check|Done|Correct)[\.!\s]/i.test(line)) return false;
