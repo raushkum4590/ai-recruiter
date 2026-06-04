@@ -19,8 +19,8 @@ function Login() {
   return (
     <div className='flex flex-col items-center justify-center h-screen'>
       <div className='flex flex-col items-center border rounded-2xl p-8 '>
-        <Image src='/logo.svg' alt='logo' width={400} height={100} 
-        className='w-[180px]'/>
+        <Image src='/logo.svg' alt='logo' width={400} height={100}
+        className='w-[180px]' style={{ height: 'auto' }} />
         <div className='flex flex-col items-center'>
           <Image src='/ai.jpeg' alt='login' width={600} height={400}
           className='w-[400px] h-[250px] rounded-2xl mt-3'/>

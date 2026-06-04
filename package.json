@@ -10,6 +10,8 @@
   },
   "dependencies": {
     "@google/generative-ai": "^0.24.1",
+    "@langchain/core": "^1.1.48",
+    "@langchain/groq": "^1.2.1",
     "@radix-ui/react-alert-dialog": "^1.1.10",
     "@radix-ui/react-dialog": "^1.1.10",
     "@radix-ui/react-progress": "^1.1.4",
@@ -23,6 +25,7 @@
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "framer-motion": "^12.9.2",
+    "langchain": "^1.4.4",
     "lucide-react": "^0.488.0",
     "moment": "^2.30.1",
     "next": "^16.2.2",
